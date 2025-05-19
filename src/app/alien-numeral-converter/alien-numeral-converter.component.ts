@@ -1,7 +1,6 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-// Define type for valid symbols
 type AlienSymbol = 'A' | 'B' | 'Z' | 'L' | 'C' | 'D' | 'R';
 
 @Component({
@@ -13,8 +12,10 @@ type AlienSymbol = 'A' | 'B' | 'Z' | 'L' | 'C' | 'D' | 'R';
 })
 export class AlienNumeralConverterComponent {
   alienNumeral: string = '';
+  submittedValue: string = ''; // Stores the submitted value
   result: number | null = null;
   error: string | null = null;
+  isConverting: boolean = false; // For loading state
 
   public readonly SYMBOL_VALUES: Record<AlienSymbol, number> = {
     'A': 1,
@@ -39,14 +40,18 @@ export class AlienNumeralConverterComponent {
   convertAlienNumeral(): void {
     this.error = null;
     this.result = null;
+    this.isConverting = true;
+    this.submittedValue = this.alienNumeral; // Store the submitted value
 
     if (!this.alienNumeral) {
       this.error = 'Please enter an Alien numeral';
+      this.isConverting = false;
       return;
     }
 
     if (!/^[ABZLCDR]+$/.test(this.alienNumeral)) {
       this.error = 'Invalid characters. Only A, B, Z, L, C, D, R allowed.';
+      this.isConverting = false;
       return;
     }
 
@@ -54,6 +59,8 @@ export class AlienNumeralConverterComponent {
       this.result = this.alienToInteger(this.alienNumeral);
     } catch (e) {
       this.error = e instanceof Error ? e.message : 'Invalid numeral format';
+    } finally {
+      this.isConverting = false;
     }
   }
 
@@ -63,6 +70,10 @@ export class AlienNumeralConverterComponent {
 
     while (i < s.length) {
       const currentSymbol = s[i] as AlienSymbol;
+      if (!(currentSymbol in this.SYMBOL_VALUES)) {
+        throw new Error(`Invalid symbol: ${currentSymbol}`);
+      }
+
       const currentValue = this.SYMBOL_VALUES[currentSymbol];
 
       if (i + 1 < s.length) {
@@ -83,6 +94,7 @@ export class AlienNumeralConverterComponent {
 
   resetForm(): void {
     this.alienNumeral = '';
+    this.submittedValue = '';
     this.result = null;
     this.error = null;
   }

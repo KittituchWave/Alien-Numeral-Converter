@@ -25,8 +25,8 @@ A web application that converts numerals from an alien symbol system to integers
 
 2. **Clone the repository**:
    ```bash
-   git clone https://github.com/KittituchWave/Software-Engineer-Test.git
-   cd software-engineer-test
+   git clone https://github.com/KittituchWave/Alien-Numeral-Converter.git
+   cd alien-numeral-converter
    ```
 3. **Install dependencies**:
    ```bash

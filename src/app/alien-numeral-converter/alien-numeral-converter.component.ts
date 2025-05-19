@@ -2,8 +2,8 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 /**
- * Defines valid alien numeral symbols and their TypeScript type
- * Used throughout component for type-safe symbol handling
+ * Represents valid symbols in the alien numeral system
+ * Ensures type-safe handling of symbols throughout the component
  */
 type AlienSymbol = 'A' | 'B' | 'Z' | 'L' | 'C' | 'D' | 'R';
 
@@ -15,16 +15,25 @@ type AlienSymbol = 'A' | 'B' | 'Z' | 'L' | 'C' | 'D' | 'R';
   styleUrls: ['./alien-numeral-converter.component.css'],
 })
 export class AlienNumeralConverterComponent {
-  alienNumeral: string = ''; // Stores raw user input from the form field
-  submittedValue: string = ''; // Stores the submitted value
-  result: number | null = null; // Conversion result (null when no valid conversion exists)
-  error: string | null = null; // Error message to display (null when no error)
-  isConverting: boolean = false; // For loading state
+  // User input from the text field
+  alienNumeral: string = '';
+
+  // Validated input stored at conversion time
+  submittedValue: string = '';
+
+  // Conversion result (null when no valid conversion)
+  result: number | null = null;
+
+  // Error message display (null when no error)
+  error: string | null = null;
+
+  // Conversion state flag for UI feedback
+  isConverting: boolean = false;
 
   /**
    * Maps alien symbols to their numeric values
-   * Uses Record<AlienSymbol, number> for type safety
-   * Marked readonly to prevent runtime modification
+   * Maintains immutability with readonly modifier
+   * Uses Record type for strict symbol-value mapping
    */
   public readonly SYMBOL_VALUES: Record<AlienSymbol, number> = {
     A: 1,
@@ -36,44 +45,63 @@ export class AlienNumeralConverterComponent {
     R: 1000,
   };
 
-  private readonly SUBTRACTION_CASES: Partial<
-    Record<AlienSymbol, AlienSymbol[]>
-  > = {
+  /**
+   * Valid subtraction combinations per problem rules
+   * Keys: Subtracted symbols
+   * Values: Symbols that can follow to form subtractive pairs
+   */
+  private readonly VALID_SUBTRACTIONS: Record<AlienSymbol, AlienSymbol[]> = {
     A: ['B', 'Z'],
+    B: [],
     Z: ['L', 'C'],
+    L: [],
     C: ['D', 'R'],
+    D: [],
+    R: [],
   };
 
+  /**
+   * Maximum allowed consecutive repetitions per symbol
+   * Enforces subtractive notation requirements
+   * Example: A can repeat 3 times (AAA=3) but not 4 (AAAA)
+   */
+  private readonly MAX_REPEATS: Record<AlienSymbol, number> = {
+    A: 3,
+    B: 1,
+    Z: 3,
+    L: 1,
+    C: 3,
+    D: 1,
+    R: 1,
+  };
+
+  /**
+   * Retrieves valid symbols for display in the reference table
+   * @returns Array of valid AlienSymbols
+   */
   getSymbols(): AlienSymbol[] {
     return Object.keys(this.SYMBOL_VALUES) as AlienSymbol[];
   }
 
+  convertToUppercase(): void {
+    // Convert input to uppercase and filter invalid characters
+    this.alienNumeral = this.alienNumeral
+      .toUpperCase()
+      .replace(/[^ABZLCDR]/g, ''); // Remove any non-alien symbols
+  }
+
   /**
-   * Converts the current alienNumeral to its numeric equivalent
+   * Main conversion entry point
    * Handles validation, error states, and conversion flow
-   * Updates submittedValue only on successful validation
    */
   convertAlienNumeral(): void {
-    // Reset state for new conversion attempt
     this.error = null;
     this.result = null;
     this.isConverting = true;
-    
-    this.submittedValue = this.alienNumeral; // Store the submitted value
-
-    if (!this.alienNumeral) {
-      this.error = 'Please enter an Alien numeral';
-      this.isConverting = false;
-      return;
-    }
-
-    if (!/^[ABZLCDR]+$/.test(this.alienNumeral)) {
-      this.error = 'Invalid characters. Only A, B, Z, L, C, D, R allowed.';
-      this.isConverting = false;
-      return;
-    }
+    this.submittedValue = this.alienNumeral;
 
     try {
+      this.validateNumeral(this.alienNumeral);
       this.result = this.alienToInteger(this.alienNumeral);
     } catch (e) {
       this.error = e instanceof Error ? e.message : 'Invalid numeral format';
@@ -83,40 +111,86 @@ export class AlienNumeralConverterComponent {
   }
 
   /**
-   * Converts a string of alien symbols to numeric value
-   * Implements subtractive notation rules (like IV=4, IX=9)
-   * @param s - Input string containing valid alien symbols
-   * @returns Numeric equivalent
-   * @throws Error if invalid symbols are encountered
+   * Validates numeral against problem constraints
+   * @param s - Input string to validate
+   * @throws Error with descriptive message for invalid cases
+   */
+  private validateNumeral(s: string): void {
+    // Basic character validation
+    if (!/^[ABZLCDR]+$/.test(s)) {
+      throw new Error('Invalid characters. Only A, B, Z, L, C, D, R allowed.');
+    }
+
+    const symbols = s.split('') as AlienSymbol[];
+    let currentSymbol = symbols[0];
+    let count = 1;
+
+    // Check consecutive symbol limits
+    for (let i = 1; i < symbols.length; i++) {
+      if (symbols[i] === currentSymbol) {
+        if (++count > this.MAX_REPEATS[currentSymbol]) {
+          throw new Error(
+            `Invalid additive notation: ${currentSymbol.repeat(
+              count
+            )} must use subtractive form`
+          );
+        }
+      } else {
+        currentSymbol = symbols[i];
+        count = 1;
+      }
+    }
+
+    // Validate subtractive pairs
+    for (let i = 0; i < symbols.length - 1; i++) {
+      const current = symbols[i];
+      const next = symbols[i + 1];
+
+      if (this.SYMBOL_VALUES[current] < this.SYMBOL_VALUES[next]) {
+        if (!this.VALID_SUBTRACTIONS[current]?.includes(next)) {
+          throw new Error(
+            `Invalid subtraction: ${current}${next} is not a valid combination`
+          );
+        }
+        i++; // Skip next symbol as part of validated pair
+      }
+    }
+  }
+
+  /**
+   * Converts validated alien numeral to integer
+   * @param s - Validated input string
+   * @returns Numeric value of the numeral
    */
   private alienToInteger(s: string): number {
     let total = 0;
     let i = 0;
+    const symbols = s.split('') as AlienSymbol[];
 
-    while (i < s.length) {
-      const currentSymbol = s[i] as AlienSymbol;
-      if (!(currentSymbol in this.SYMBOL_VALUES)) {
-        throw new Error(`Invalid symbol: ${currentSymbol}`);
+    while (i < symbols.length) {
+      const current = symbols[i];
+
+      // Check for valid subtractive pair
+      if (
+        i < symbols.length - 1 &&
+        this.SYMBOL_VALUES[current] < this.SYMBOL_VALUES[symbols[i + 1]]
+      ) {
+        total +=
+          this.SYMBOL_VALUES[symbols[i + 1]] - this.SYMBOL_VALUES[current];
+        i += 2; // Advance past both symbols
+      } else {
+        total += this.SYMBOL_VALUES[current];
+        i++;
       }
-
-      const currentValue = this.SYMBOL_VALUES[currentSymbol];
-
-      if (i + 1 < s.length) {
-        const nextSymbol = s[i + 1] as AlienSymbol;
-        if (this.SUBTRACTION_CASES[currentSymbol]?.includes(nextSymbol)) {
-          total += this.SYMBOL_VALUES[nextSymbol] - currentValue;
-          i += 2;
-          continue;
-        }
-      }
-
-      total += currentValue;
-      i++;
     }
 
     return total;
   }
 
+  /**
+   * Resets all component state to initial values
+   * Clears both input and conversion results
+   */
   resetForm(): void {
     this.alienNumeral = '';
     this.submittedValue = '';

@@ -83,13 +83,6 @@ export class AlienNumeralConverterComponent {
     return Object.keys(this.SYMBOL_VALUES) as AlienSymbol[];
   }
 
-  convertToUppercase(): void {
-    // Convert input to uppercase and filter invalid characters
-    this.alienNumeral = this.alienNumeral
-      .toUpperCase()
-      .replace(/[^ABZLCDR]/g, ''); // Remove any non-alien symbols
-  }
-
   /**
    * Main conversion entry point
    * Handles validation, error states, and conversion flow
@@ -101,8 +94,19 @@ export class AlienNumeralConverterComponent {
     this.submittedValue = this.alienNumeral;
 
     try {
-      this.validateNumeral(this.alienNumeral);
-      this.result = this.alienToInteger(this.alienNumeral);
+      // Validate raw input for invalid characters
+      const rawInput = this.alienNumeral.toUpperCase();
+      if (!/^[ABZLCDR]*$/.test(rawInput)) {
+        throw new Error(
+          'Invalid characters. Only A, B, Z, L, C, D, R allowed.'
+        );
+      }
+
+      // Proceed with validated input
+      const cleanedInput = rawInput.replace(/[^ABZLCDR]/g, '');
+      this.alienNumeral = cleanedInput; // Update input with cleaned version
+      this.validateNumeral(cleanedInput);
+      this.result = this.alienToInteger(cleanedInput);
     } catch (e) {
       this.error = e instanceof Error ? e.message : 'Invalid numeral format';
     } finally {
@@ -116,7 +120,7 @@ export class AlienNumeralConverterComponent {
    * @throws Error with descriptive message for invalid cases
    */
   private validateNumeral(s: string): void {
-    // Basic character validation
+    // Basic character validation (should already be handled, but double-check)
     if (!/^[ABZLCDR]+$/.test(s)) {
       throw new Error('Invalid characters. Only A, B, Z, L, C, D, R allowed.');
     }

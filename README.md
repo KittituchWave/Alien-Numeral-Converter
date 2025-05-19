@@ -1,59 +1,77 @@
-# Test
+# Alien Numeral Converter
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.12.
+A web application that converts numerals from an alien symbol system to integers, following specific subtractive notation rules. Built with Angular and Tailwind CSS.
 
-## Development server
+![image_2025-05-19_141621519](https://github.com/user-attachments/assets/62aa5585-4caf-47d9-abd7-177888ef651a)
 
-To start a local development server, run:
+## Features
 
-```bash
-ng serve
-```
+- **Symbol Conversion**: Convert alien symbols (A, B, Z, L, C, D, R) to integers
+- **Subtractive Notation**: Handles special cases like AB=4, AZ=9, ZL=40, etc.
+- **Input Validation**:
+  - Rejects invalid characters
+  - Enforces correct subtractive notation
+  - Prevents invalid additive forms (e.g., AAAA instead of AB)
+- **Interactive UI**:
+  - Real-time error feedback
+  - Conversion history display
+  - Symbol value reference table
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Installation
 
-## Code scaffolding
+1. **Prerequisites**:
+   - Node.js v18+
+   - npm v9+
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+2. **Clone the repository**:
+   ```bash
+   git clone https://github.com/KittituchWave/Software-Engineer-Test.git
+   cd software-engineer-test
+   ```
+3. **Install dependencies**:
+   ```bash
+   npm install
+   ```
 
-```bash
-ng generate component component-name
-```
+## Usage
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+1. **Start the development server**:
+   ```bash
+   ng serve
+   ```
+   The application will be available at http://localhost:4200
+   
+2. **Using the converter**:
+   - Enter alien symbols in the input field (e.g., RCRZCAB)
+   - Click "Convert" to see the integer result
+   - Use "Reset" to clear all fields
 
-```bash
-ng generate --help
-```
+**Example Valid Inputs**:
+- **`AAA` → 3**
+- **`LBAA` → 58**
+- **`RCRZCAB` → 1944**
 
-## Building
+## Technical Details
 
-To build the project run:
+- **Framework**: Angular 19
+- **Styling**: Tailwind CSS
+- **Validation**:
+  - Character whitelist: `[ABZLCDR]`
+  - Consecutive symbol limits
+  - Valid subtractive pair checks
+- **Conversion Logic**:
+  - Sequential symbol parsing
+  - Subtractive notation detection
+  - Cumulative total calculation
 
-```bash
-ng build
-```
+## Testing
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
+Run unit tests with:
 ```bash
 ng test
 ```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Key test cases:
+- Valid numeral conversions
+- Invalid input detection
+- Edge case handling
+- Validation rule enforcement
